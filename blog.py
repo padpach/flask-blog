@@ -4,14 +4,16 @@
 from flask import Flask, render_template, request, session, \
 	flash, redirect, url_for, g
 import sqlite3
+from functools import wraps
 
 #configuracion
 DATABASE = 'blog.db'
-app = 	Flask(__name__)
 USERNAME = 'admin'
 PASSWORD = 'admin'
 SECRET_KEY = '\xcd~\x1d\x128\xf7p\x0cZ\xe0\x00>\x85_\x82\xa7|P,\xafE\xfe\xf6w'
 
+
+app = 	Flask(__name__)
 
 #jala la configuracion buscando por Variables Mayusculas
 app.config.from_object(__name__)
@@ -19,6 +21,19 @@ app.config.from_object(__name__)
 #nos conectamos a la base de datos en sqlite3
 def connect_db():
 	return sqlite3.connect(app.config['DATABASE'])
+
+def login_required(test):
+	@wraps(test)
+	def wrap(*args, **kwargs):
+		if 'logged_in' in session:
+			return test(*args, **kwargs)
+		else:
+			flash('Ups, Primero debes accesar.')
+			return redirect(url_for('login'))
+	return wrap
+
+
+
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -33,6 +48,36 @@ def login():
 			return redirect(url_for('main'))
 	return render_template('login.html', error=error)
 
+
+@app.route('/main')
+@login_required
+def main():
+	g.db = connect_db()
+	cur = g.db.execute('select * from posts')
+	posts = [dict(title=row[0], post=row[1]) for row in cur.fetchall()]
+	g.db.close()
+	return render_template('main.html', posts=posts)
+
+
+@app.route('/add', methods=['POST'])
+@login_required
+def add():
+	title = request.form['title']
+	post = request.form['post']
+	if not title or not post:
+		flash("debes llenar todos los campos, intenta de nuevo")
+		return redirect(url_for('main'))
+	else:
+		g.db = connect_db()
+		g.db.execute('insert into posts (title, post) values (?, ?)', [request.form['title'], request.form['post']])
+		g.db.commit()
+		g.db.close()
+		flash('listo, registro Agregado :- ')
+		return redirect(url_for('main'))
+
+
+
+
 @app.route('/logout')
 def logout():
 	session.pop('logged_in', None)
@@ -40,10 +85,5 @@ def logout():
 	return redirect(url_for('login'))
 
 
-@app.route('/main')
-def main():
-	return render_template('main.html')
-
 if __name__ == '__main__':
 	app.run(debug=True)
-
