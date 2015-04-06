@@ -1,9 +1,10 @@
 {% extends "template.html" %}
 {% block content %}
 	<h2>Bienvenido al Blog de Padpach</h2>
+
 	<h3>Agrega un nuevo post</h3>
 	<form action="{{ url_for('add') }}" method="post" class"add">
-		<label><strong>Title:</strong></label>
+		<label><strong>Titulo:</strong></label>
 		<input name="title" type="text">
 		<p><label><strong>Post:</strong></label><br>
 		<textarea name="post" rows="5" cols="40"></textarea></p>
@@ -13,8 +14,8 @@
 	<br>
 	<h3>Posts:</h3>
 	{% for p in posts  %}
-		<strong>Title:</strong> {{ p.title }}
-		<strong>Title:</strong> {{ p.post }}
+		<strong>Tiulo:</strong> {{ p.title }}
+		<strong>Post:</strong> {{ p.post }}
 		<br/>
 	{% endfor %}
 	<p><a href="/logout">Logout</a></p>
